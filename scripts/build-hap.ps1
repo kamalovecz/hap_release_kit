@@ -32,6 +32,24 @@ Write-Host "=================================================="
 Write-Host " 目标: $bundle  v$version"
 Write-Host "=================================================="
 
+# 手机兼容性提示(仅提示；签名本身不依赖手机在线)
+$needApi = Get-CompatibleVersion ([int]$module.app.'minAPIVersion')
+Write-Host " 该 HAP 最低需要 API $needApi (minAPIVersion=$($module.app.'minAPIVersion'))"
+$device = Get-DeviceInfo
+if ($device) {
+    if ($device.ApiVersion) {
+        $mark = if ($needApi -gt [int]$device.ApiVersion) { '⚠️ 手机系统过低' } else { '✅ 兼容' }
+        Write-Host " 手机: API $($device.ApiVersion) (HarmonyOS $($device.OsVersion)) → $mark"
+        if ($needApi -gt [int]$device.ApiVersion) {
+            Write-Host "  [!] 该 HAP 无法安装在当前手机上(需要 API $needApi+)，安装步骤会失败。"
+        }
+    } else {
+        Write-Host " 手机已连接，但无法读取 API 版本(跳过兼容检查)。"
+    }
+} else {
+    Write-Host " 未检测到手机(仅签名不影响；如需安装请先连接手机并加 -Install)。"
+}
+
 # 自动匹配 Profile
 $profileInfo = Find-ProfileForBundle $bundle
 if (-not $profileInfo) {

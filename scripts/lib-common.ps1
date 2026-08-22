@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # hap_release_kit 公共函数库
 # 本文件被其它脚本点用(Import-Module 或 dot-source)，不直接执行
 # ============================================================
@@ -115,6 +115,21 @@ function Find-ProfileForBundle([string]$bundleName) {
         } catch { Write-Host "[警告] 解析失败: $($f.Name) => $($_.Exception.Message)" }
     }
     return $null
+}
+
+# ------------------------------------------------------------
+# 探测已连接设备(HarmonyOS 版本 / API 版本)
+# 返回 PSCustomObject {Serial, ApiVersion, OsVersion}；无设备返回 $null
+# ------------------------------------------------------------
+function Get-DeviceInfo {
+    try {
+        $targets = (& $script:HdcExe 'list' 'targets' 2>$null | Out-String).Trim()
+        if (-not $targets -or $targets -match 'Empty') { return $null }
+        $serial = ($targets -split "`r?`n" | Where-Object { $_ -match '\S' } | Select-Object -First 1).Trim()
+        $api = (& $script:HdcExe 'shell' 'param' 'get' 'const.product.ohos.apiversion' 2>$null | Out-String).Trim()
+        $osv = (& $script:HdcExe 'shell' 'param' 'get' 'const.product.ohos.version' 2>$null | Out-String).Trim()
+        return [PSCustomObject]@{ Serial = $serial; ApiVersion = $api; OsVersion = $osv }
+    } catch { return $null }
 }
 
 # ------------------------------------------------------------

@@ -1,15 +1,61 @@
 # hap_release_kit — HarmonyOS HAP 签名安装套件（可复制版）
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
-![GitHub](https://img.shields.io/badge/git-git%20lfs--important)
+![HarmonyOS](https://img.shields.io/badge/HarmonyOS-NEXT%205.0%2B-blueviolet)
+[![Release](https://img.shields.io/github/v/release/kamalovecz/hap_release_kit)](https://github.com/kamalovecz/hap_release_kit/releases)
 
 一套**自包含、可整体复制/克隆到任意电脑**的 HAP 签名/安装工具集。
 针对"小白调试助手（hap_installer 3.1.0）自动签名报 `127.0.0.1:50424 连接被拒绝`"的问题，
-改用**本机 signer.exe 直接签名 + hdc 安装**的稳定链路，签名产物经 `verify-app` 校验、可正常安装到 Mate 60。
+改用**本机 signer.exe 直接签名 + hdc 安装**的稳定链路，签名产物经 `verify-app` 校验、可正常安装。
 
-> 已验证：ClashBox LTS 1.7.4（含 7 个原生 .so）→ 签名 → `hdc install` 成功。
+> ✅ 已验证：ClashBox LTS 1.7.4（含 7 个原生 .so）→ 签名 → `hdc install` 成功（Mate 60 / HarmonyOS NEXT）。
 > 全程离线完成，不依赖手机端"小白调试助手"和 50424 端口。
 > 远端仓库: `git@github.com:kamalovecz/hap_release_kit.git`
+
+---
+
+## 📦 下载（GitHub Releases）
+
+| 文件 | 说明 | 适用 |
+|---|---|---|
+| [ClashBox_LTS_V1_unsigned.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/ClashBox_LTS_V1_unsigned.hap) | ClashBox LTS 1.7.4 官方未签名包 | 任何 HarmonyOS NEXT 设备（自行签名后安装） |
+| [org.xbgroup.clashboxLTS-signed.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/org.xbgroup.clashboxLTS-signed.hap) | 已签名安装包 | ⚠️ 仅绑定 Profile 内的那台手机可安装 |
+
+> 用 `scripts\download-clash.ps1` 可直接拉取最新 Release 到 `input\`。
+
+## 🧭 兼容性说明（鸿蒙版本）
+
+本套件面向 **HarmonyOS NEXT（5.0 及以上）**，即基于 OpenHarmony 内核、可运行 `.hap` 应用的系统。
+
+### HarmonyOS 版本 ↔ API 版本对照
+
+| 鸿蒙版本 | API | 典型设备 | 本套件 |
+|---|---|---|---|
+| HarmonyOS 4.x | 9 / 10 | 老机型(未升级) | ❌ 不适用（AOSP 内核，不能装 HAP） |
+| HarmonyOS 5.0.0 | 12 | 首批 NEXT 机型 | ✅ 支持 |
+| HarmonyOS 5.0.1 | 17 | Mate 60 系列（实测✅） | ✅ 支持 |
+| HarmonyOS 5.0.2 / 5.1 | 18 | Pura 70 等 | ✅ 支持 |
+| HarmonyOS 6.0 | 20 | 新旗舰 | ✅ 支持 |
+
+### 关键规则
+
+1. **HAP 有最低系统要求**：`module.json` 里的 `minAPIVersion` 决定最低可运行的 API。
+   - 例：ClashBox LTS 1.7.4 = `50005017` → 需要 **API 17（HarmonyOS 5.0.1）及以上**。
+   - 脚本自动把 `minAPIVersion` 换算成 compatibleVersion 并写入签名。
+2. **安装前自动校验**：`install-hap.ps1` 会读取手机的 `const.product.ohos.apiversion`，
+   与 HAP 需求对比，不兼容直接报错并给出提示（不会硬装失败）。
+3. **Profile 与设备绑定**：每个 Profile（.p7b）只包含特定手机的 UDID，**换手机必须重新生成**（见"Profile 过期/缺失怎么办"）。
+
+### 如何查看手机的 API / 鸿蒙版本
+
+- **图形界面**：设置 → 关于本机 → HarmonyOS 版本（如 5.0.1）；
+- **命令行**（需已连 hdc）：
+  ```bat
+  hdc shell param get const.product.ohos.version
+  hdc shell param get const.product.ohos.apiversion
+  ```
+
+> 如果你的手机还在 HarmonyOS 4.x（无法装 HAP）：请先在 设置→系统→软件更新 升级到 HarmonyOS NEXT，再使用本套件。
 
 ---
 
@@ -20,10 +66,10 @@ hap_release_kit\
 ├── scripts\            # PowerShell 脚本(全部入库)
 │   ├── build-hap.ps1        # 一键：自动匹配 Profile → 签名 → 校验 → 安装
 │   ├── sign-hap.ps1         # 签名（可单独调用）
-│   ├── install-hap.ps1      # hdc 安装（可单独调用）
+│   ├── install-hap.ps1      # hdc 安装（含手机 API 兼容性检查）
 │   ├── download-clash.ps1   # 从 GitHub Releases 下载最新未签名 HAP
 │   ├── refresh-profile.ps1  # Profile 过期/缺失处理(自动从工具 store 同步)
-│   └── lib-common.ps1       # 公共函数库
+│   └── lib-common.ps1       # 公共函数库(含设备/API 探测)
 ├── tools\               # 签名与调试工具：signer.exe / hdc.exe / packing_tool.exe 及依赖 DLL(入库)
 ├── certs\               # 签名材料
 │   ├── xiaobai-debug.cer    # 应用证书链(公开证书，入库)
@@ -46,7 +92,7 @@ hap_release_kit\
 |---|---|---|
 | `certs\key.pem` | 签名私钥，严禁入库 | 从本机 `C:\Users\<你>\Documents\hap_installer\store\key.pem` 复制回来 |
 | `certs\xiaobai.p12` | 含私钥的密钥库 | 同上，从工具 store 复制 |
-| `input\*.hap` | 超过 GitHub 100 MiB 文件限制 | 用 `scripts\download-clash.ps1` 下载，或手动放入 |
+| `input\*.hap` | 超过 GitHub 100 MiB 文件限制 | 用 `scripts\download-clash.ps1` 下载，或从 Releases 下载 |
 | `output\*.hap` | 签名产物体积大 | 由签名脚本生成 |
 | `hap_installer\` | 157 MB 二进制复制品 | 需要时从原工具目录复制 |
 
@@ -63,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build-hap.ps1 -HapPath input\Cl
 ```
 
 脚本会自动：读取 HAP 包名 → 匹配 `profiles\` 里对应的 Profile → 检测原生库自动开代码签名 →
-调用 `signer.exe` 签名 → `verify-app` 校验 → `hdc install` 安装。
+检查手机 API 兼容性 → 调用 `signer.exe` 签名 → `verify-app` 校验 → `hdc install` 安装。
 
 ### 场景 B：下载最新的 ClashBox / ClashNext 未签名 HAP 并安装
 
@@ -108,7 +154,7 @@ Signing Service CA ← Huawei CBG Root CA G2），本机无法伪造，只能让
 | org_xbgroup_clashboxLTS.p7b | ClashBox LTS | ✅ 有效至 2027-08-21 |
 | org_xbstudio_clashnext.p7b | ClashNext | ⚠️ 已过期（2026-06-08），需重新生成 |
 
-重新生成步骤（需能连华为云，工具内需保持登录）：
+重新生成步骤（需能连华为云，工具内需保持登录；**每台新手机都要重新生成**）：
 
 1. 把该应用的未签名 HAP **拖进小白调试助手**（加入应用列表）；
 2. 手机连好后，点**更多 → 重置证书和Profile**（工具会调用华为云为该应用重新生成 Profile）；
@@ -128,6 +174,8 @@ powershell -ExecutionPolicy Bypass -File scripts\refresh-profile.ps1 -BundleName
 | 签名报 `不支持 p12文件 请使用pem格式的私钥` | keystore 用了 p12。本套件默认用 `certs\key.pem`（工具自己就是从 p12 提取的），无需处理 |
 | 签名后安装报 `no signature file` (9568320) | 签名块没写进去（常见于用 p12 签名失败的情况）。用本套件 `sign-hap.ps1` 重签 |
 | 安装报 `verify code signature failed` (9568393) | HAP 含原生 .so 但没做代码签名。`sign-hap.ps1` 会自动识别并加 `-signCode 1` |
+| 安装报 `min api version` / `install app version is lower` 之类 | **HAP 需要的 API 比手机系统高**。`install-hap.ps1` 会提前拦截并提示；升级鸿蒙或换更新的设备 |
+| 手机是 HarmonyOS 4.x，安装报错 | 4.x 基于安卓内核、不支持 HAP。请先升级到 HarmonyOS NEXT（5.0+） |
 | 安装报 Profile 相关问题 / `device` 不在列表 | Profile 过期或没包含当前手机 UDID。见「四、Profile 过期/缺失怎么办」 |
 | `hdc install` 报 `install bundle already exists` | 同包名已安装，加 `-Replace` 覆盖 |
 | `hdc list targets` 为空 | 手机开发者模式/USB调试未开，或驱动未装；换 USB 线/接口，或改用无线调试 |
@@ -146,7 +194,7 @@ signer.exe sign-app -mode localSign -keyAlias xiaobai
   -keystorePwd  xiaobai123
   -inFile       <未签名.hap>
   -outFile      <签名.hap>
-  -compatibleVersion <API版本>          ← 由 minAPIVersion 自动推导
+  -compatibleVersion <API版本>          ← 由 minAPIVersion 自动推导(12/17/18/20...)
   -signCode     1                       ← 含原生 .so 时必填，否则手机拒装
 ```
 
