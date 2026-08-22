@@ -1,0 +1,27 @@
+# ============================================================
+# hap_release_kit .gitignore
+# 说明:
+#   - key.pem / xiaobai.p12 包含签名私钥, 绝不入库
+#   - *.hap 超过 GitHub 100MiB 文件限制, 不入库
+#   - hap_installer/ 是 157MB 的二进制复制品, 不入库
+# ============================================================
+
+# --- 私钥与密钥材料 ---
+certs/key.pem
+certs/xiaobai.p12
+
+# --- 大文件(超 GitHub 限制) ---
+input/*.hap
+output/*.hap
+hap_installer/
+
+# --- 本机工具 store(不入库) ---
+store/
+
+# --- 临时文件与系统文件 ---
+*.log
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+desktop.ini
