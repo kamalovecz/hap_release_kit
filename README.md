@@ -18,10 +18,39 @@
 
 | 文件 | 说明 | 适用 |
 |---|---|---|
-| [ClashBox_LTS_V1_unsigned.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/ClashBox_LTS_V1_unsigned.hap) | ClashBox LTS 1.7.4 官方未签名包 | 任何 HarmonyOS NEXT 设备（自行签名后安装） |
-| [org.xbgroup.clashboxLTS-signed.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/org.xbgroup.clashboxLTS-signed.hap) | 已签名安装包 | ⚠️ 仅绑定 Profile 内的那台手机可安装 |
+| [ClashBox_LTS_V1_unsigned.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/ClashBox_LTS_V1_unsigned.hap) | ClashBox LTS 1.7.4 **官方未签名包**（来源: xiaobaigroup/ClashBox v1.7.4 Release，与设备无关） | **任何型号的 HarmonyOS NEXT 设备**，下载后按下方步骤为自己签名安装 |
+| [org.xbgroup.clashboxLTS-signed.hap](https://github.com/kamalovecz/hap_release_kit/releases/download/v1.7.4/org.xbgroup.clashboxLTS-signed.hap) | 已签名安装包（本文档作者的设备签名产物） | ⚠️ **仅绑定 Profile 里的那一台手机**，他人/其他型号无法安装 |
 
 > 用 `scripts\download-clash.ps1` 可直接拉取最新 Release 到 `input\`。
+
+### 🖥️ 为「你自己的设备」签名安装（不同型号通用，不依赖作者的 Mate 60）
+
+**未签名包是通用的**：`ClashBox_LTS_V1_unsigned.hap` 不包含任何设备绑定信息，
+任何型号的 HarmonyOS NEXT 手机（Mate / Pura / nova / 折叠屏等）拿到它都可以签名安装。
+
+**但签名必须用「你自己的 Profile」**——Profile（.p7b）由华为云签发，里面写死了：
+- 你的华为账号开发证书；
+- **你的手机 UDID**（`device-ids`）；
+- 应用包名（`org.xbgroup.clashboxLTS`）。
+
+所以仓库里 `org_xbgroup_clashboxLTS.p7b` 只对作者这台 Mate 60 有效，**别人的设备不能用它签名**。
+你自己的设备请按下面 3 步生成专属 Profile：
+
+1. **下载未签名包**（上表第一个文件），拷到 `input\`；
+2. **生成你的 Profile**：在电脑上打开小白调试助手（保持华为账号登录），把该 HAP 拖进工具，
+   手机连好后点「更多 → 重置证书和Profile」→ 工具调用华为云为**你的手机 UDID** 生成新的 p7b；
+   （或直接用 DevEco Studio 的自动签名流程）
+3. **同步并签名安装**：
+   ```bat
+   :: 把新生成的 p7b 同步进套件(自动从工具 store 目录复制)
+   powershell -ExecutionPolicy Bypass -File scripts\refresh-profile.ps1 -BundleName org.xbgroup.clashboxLTS
+
+   :: 一键签名 + 安装(自动校验你手机的 API 版本)
+   powershell -ExecutionPolicy Bypass -File scripts\build-hap.ps1 -HapPath input\ClashBox_LTS_V1_unsigned.hap -Install
+   ```
+
+> 关键点：**真正决定能否安装的是"Profile 里的设备 UDID"，而不是 HAP 本身**。
+> 未签名 HAP 人人可签，Profile 一人一机。
 
 ## 🧭 兼容性说明（鸿蒙版本）
 
